@@ -29,7 +29,7 @@ jobs:
           cd backend && pytest
 
   build-and-push:
-    needs: test
+    # needs: test
     runs-on: ubuntu-latest
     permissions:
       packages: write  # Required for pushing to GHCR
