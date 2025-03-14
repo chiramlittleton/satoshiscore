@@ -1,0 +1,53 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r backend/requirements.txt
+
+      - name: Run Tests
+        run: |
+          cd backend && pytest
+
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write  # Required for pushing to GHCR
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $GITHUB_ACTOR --password-stdin
+
+      - name: Build and Push Backend Image
+        run: |
+          docker build -t ghcr.io/chiramlittleton/satoshiscore-backend:latest ./backend
+          docker push ghcr.io/chiramlittleton/satoshiscore-backend:latest
+
+      - name: Build and Push Frontend Image
+        run: |
+          docker build -t ghcr.io/chiramlittleton/satoshiscore-frontend:latest ./frontend
+          docker push ghcr.io/chiramlittleton/satoshiscore-frontend:latest

@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:15
+    container_name: satoshiscore-db
+    restart: always
+    environment:
+      POSTGRES_USER: satoshi
+      POSTGRES_PASSWORD: satoshi_pass
+      POSTGRES_DB: satoshiscore
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/schema.sql:/docker-entrypoint-initdb.d/schema.sql  # Runs at startup
+
+  backend:
+    image: ghcr.io/chiramlittleton/satoshiscore-backend:latest
+    build: ./backend
+    container_name: satoshiscore-backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://satoshi:satoshi_pass@db:5432/satoshiscore
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+volumes:
+  postgres_data:
